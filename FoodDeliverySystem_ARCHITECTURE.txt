@@ -1,0 +1,747 @@
+Online Food Ordering System - Architecture Plan
+==================================================
+
+Project Name
+------------
+FoodDeliverySystem
+
+Purpose
+-------
+FoodDeliverySystem is a C++ backend application for an online food ordering platform.
+The system allows users to browse stores/restaurants, view food items and prices,
+place orders, track preparation and delivery time, and communicate through live chat.
+
+The long-term goal is to build a modular backend in C++ with a database, real-time
+communication, asynchronous networking, and a web-based user interface.
+
+
+1. High-Level Architecture
+--------------------------
+
+The application will be divided into the following main layers:
+
+1. Frontend UI Layer
+   - HTML
+   - CSS
+   - JavaScript
+   - AJAX / Fetch API
+   - WebSocket client for real-time updates and live chat
+
+2. Backend Network Layer
+   - C++
+   - uWebSockets for asynchronous HTTP and WebSocket communication
+   - REST-style endpoints for normal requests
+   - WebSocket endpoints for real-time features
+
+3. Application Service Layer
+   - User management
+   - Store management
+   - Menu management
+   - Order management
+   - Delivery time estimation
+   - Live chat handling
+   - Notification handling
+
+4. Data Access Layer
+   - PostgreSQL database
+   - C++ database access wrapper
+   - Prepared statements
+   - Transaction handling
+
+5. Database Layer
+   - PostgreSQL tables for users, stores, menu items, orders, order items,
+     chat messages, addresses, and delivery estimation data
+
+
+2. Technology Choices
+---------------------
+
+Backend Language:
+- C++
+
+Main IDE:
+- Microsoft Visual Studio
+
+Database:
+- PostgreSQL
+
+Networking:
+- uWebSockets
+  Used for:
+  - HTTP endpoints
+  - WebSocket connections
+  - Real-time order status updates
+  - Live chat
+
+Boost:
+- Boost.Asio may be useful for asynchronous utilities if needed.
+- Boost.UUID can be used for generating unique IDs.
+- Boost.JSON can be used for JSON parsing/serialization.
+- Boost.DateTime or std::chrono can be used for time calculations.
+- Boost should be introduced gradually so the project stays manageable.
+
+Frontend:
+- HTML
+- CSS
+- JavaScript
+- Fetch API
+- WebSocket API
+
+Build System:
+- Visual Studio project initially
+- Later optional migration to CMake for cleaner dependency management
+
+
+3. Important Design Decision
+----------------------------
+
+The project originally started with MySQL. Moving to PostgreSQL is acceptable and valuable,
+but it means the database connection layer must be rewritten.
+
+Recommended approach:
+- Keep the application architecture database-independent.
+- Create repository classes such as UserRepository, StoreRepository, and OrderRepository.
+- Do not write SQL directly inside UI or business logic classes.
+- This makes it easier to change database systems later if needed.
+
+
+4. Main Features
+----------------
+
+4.1 User Features
+-----------------
+- Register account
+- Login
+- View available stores/restaurants
+- View food menu and prices
+- Add food items to cart
+- Place an order
+- View order status
+- Receive estimated preparation and delivery time
+- Use live chat for order support
+
+4.2 Store/Admin Features
+------------------------
+- Add/edit/remove food items
+- Update prices
+- View incoming orders
+- Accept or reject orders
+- Update order preparation status
+- Send messages to customers
+
+4.3 Delivery Features
+---------------------
+- Store customer address
+- Estimate delivery time
+- Track order status
+- Calculate total estimated time:
+  preparation time + delivery time
+
+4.4 Real-Time Features
+----------------------
+- Live chat between user and support/store
+- Real-time order status updates
+- Optional real-time notification when order is accepted, prepared, or dispatched
+
+
+5. Core Modules
+---------------
+
+5.1 Configuration Module
+------------------------
+Responsible for reading application settings.
+
+Suggested files:
+- config/AppConfig.h
+- config/AppConfig.cpp
+
+Responsibilities:
+- Database host, port, username, password, database name
+- Server host and port
+- Environment mode: development/production
+
+
+5.2 Database Module
+-------------------
+Responsible for PostgreSQL connection and query execution.
+
+Suggested files:
+- database/Database.h
+- database/Database.cpp
+- database/DbConnectionPool.h
+- database/DbConnectionPool.cpp
+
+Responsibilities:
+- Open database connections
+- Close database connections
+- Execute prepared statements
+- Handle transactions
+- Provide connection pooling later
+
+
+5.3 Models Module
+-----------------
+Plain C++ structures/classes representing application data.
+
+Suggested files:
+- models/User.h
+- models/Store.h
+- models/MenuItem.h
+- models/Order.h
+- models/OrderItem.h
+- models/Address.h
+- models/ChatMessage.h
+
+Responsibilities:
+- Hold data
+- Avoid database logic inside model classes
+
+
+5.4 Repository Module
+---------------------
+Responsible for database operations.
+
+Suggested files:
+- repositories/UserRepository.h
+- repositories/UserRepository.cpp
+- repositories/StoreRepository.h
+- repositories/StoreRepository.cpp
+- repositories/MenuRepository.h
+- repositories/MenuRepository.cpp
+- repositories/OrderRepository.h
+- repositories/OrderRepository.cpp
+- repositories/ChatRepository.h
+- repositories/ChatRepository.cpp
+
+Responsibilities:
+- Insert users
+- Find users
+- Load stores
+- Load menu items
+- Save orders
+- Save chat messages
+
+
+5.5 Service Module
+------------------
+Responsible for business rules.
+
+Suggested files:
+- services/AuthService.h
+- services/AuthService.cpp
+- services/StoreService.h
+- services/StoreService.cpp
+- services/MenuService.h
+- services/MenuService.cpp
+- services/OrderService.h
+- services/OrderService.cpp
+- services/DeliveryEstimator.h
+- services/DeliveryEstimator.cpp
+- services/ChatService.h
+- services/ChatService.cpp
+
+Responsibilities:
+- Register users
+- Login users
+- Validate order requests
+- Calculate totals
+- Estimate preparation and delivery time
+- Coordinate chat logic
+
+
+5.6 HTTP API Module
+-------------------
+Responsible for normal request/response endpoints.
+
+Suggested files:
+- api/HttpServer.h
+- api/HttpServer.cpp
+- api/AuthController.h
+- api/AuthController.cpp
+- api/StoreController.h
+- api/StoreController.cpp
+- api/MenuController.h
+- api/MenuController.cpp
+- api/OrderController.h
+- api/OrderController.cpp
+
+Example endpoints:
+- POST /api/register
+- POST /api/login
+- GET /api/stores
+- GET /api/stores/{storeId}/menu
+- POST /api/orders
+- GET /api/orders/{orderId}
+- GET /api/orders/user/{userId}
+
+
+5.7 WebSocket Module
+--------------------
+Responsible for persistent real-time connections.
+
+Suggested files:
+- realtime/WebSocketServer.h
+- realtime/WebSocketServer.cpp
+- realtime/ConnectionManager.h
+- realtime/ConnectionManager.cpp
+- realtime/OrderStatusChannel.h
+- realtime/OrderStatusChannel.cpp
+- realtime/ChatChannel.h
+- realtime/ChatChannel.cpp
+
+Responsibilities:
+- Accept WebSocket connections
+- Track connected users
+- Broadcast order status updates
+- Send and receive chat messages
+- Disconnect inactive clients
+
+
+5.8 Frontend Module
+-------------------
+Web files served either by a static server or by the backend.
+
+Suggested files:
+- frontend/index.html
+- frontend/login.html
+- frontend/register.html
+- frontend/stores.html
+- frontend/menu.html
+- frontend/cart.html
+- frontend/order-status.html
+- frontend/chat.html
+- frontend/css/styles.css
+- frontend/js/api.js
+- frontend/js/auth.js
+- frontend/js/stores.js
+- frontend/js/orders.js
+- frontend/js/chat.js
+
+Responsibilities:
+- Display stores
+- Display food items and prices
+- Allow user registration/login
+- Allow placing orders
+- Show live status updates
+- Support live chat
+
+
+6. Proposed Folder Structure
+----------------------------
+
+FoodDeliverySystem/
+│
+├── README.md
+├── ARCHITECTURE.txt
+├── CMakeLists.txt                  Optional later
+│
+├── src/
+│   ├── main.cpp
+│   │
+│   ├── config/
+│   │   ├── AppConfig.h
+│   │   └── AppConfig.cpp
+│   │
+│   ├── database/
+│   │   ├── Database.h
+│   │   ├── Database.cpp
+│   │   ├── DbConnectionPool.h
+│   │   └── DbConnectionPool.cpp
+│   │
+│   ├── models/
+│   │   ├── User.h
+│   │   ├── Store.h
+│   │   ├── MenuItem.h
+│   │   ├── Order.h
+│   │   ├── OrderItem.h
+│   │   ├── Address.h
+│   │   └── ChatMessage.h
+│   │
+│   ├── repositories/
+│   │   ├── UserRepository.h
+│   │   ├── UserRepository.cpp
+│   │   ├── StoreRepository.h
+│   │   ├── StoreRepository.cpp
+│   │   ├── MenuRepository.h
+│   │   ├── MenuRepository.cpp
+│   │   ├── OrderRepository.h
+│   │   ├── OrderRepository.cpp
+│   │   ├── ChatRepository.h
+│   │   └── ChatRepository.cpp
+│   │
+│   ├── services/
+│   │   ├── AuthService.h
+│   │   ├── AuthService.cpp
+│   │   ├── StoreService.h
+│   │   ├── StoreService.cpp
+│   │   ├── MenuService.h
+│   │   ├── MenuService.cpp
+│   │   ├── OrderService.h
+│   │   ├── OrderService.cpp
+│   │   ├── DeliveryEstimator.h
+│   │   ├── DeliveryEstimator.cpp
+│   │   ├── ChatService.h
+│   │   └── ChatService.cpp
+│   │
+│   ├── api/
+│   │   ├── HttpServer.h
+│   │   ├── HttpServer.cpp
+│   │   ├── AuthController.h
+│   │   ├── AuthController.cpp
+│   │   ├── StoreController.h
+│   │   ├── StoreController.cpp
+│   │   ├── MenuController.h
+│   │   ├── MenuController.cpp
+│   │   ├── OrderController.h
+│   │   └── OrderController.cpp
+│   │
+│   └── realtime/
+│       ├── WebSocketServer.h
+│       ├── WebSocketServer.cpp
+│       ├── ConnectionManager.h
+│       ├── ConnectionManager.cpp
+│       ├── OrderStatusChannel.h
+│       ├── OrderStatusChannel.cpp
+│       ├── ChatChannel.h
+│       └── ChatChannel.cpp
+│
+├── frontend/
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── stores.html
+│   ├── menu.html
+│   ├── cart.html
+│   ├── order-status.html
+│   ├── chat.html
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       ├── api.js
+│       ├── auth.js
+│       ├── stores.js
+│       ├── orders.js
+│       └── chat.js
+│
+├── sql/
+│   ├── schema.sql
+│   ├── seed.sql
+│   └── migrations/
+│
+├── tests/
+│   ├── test_auth.cpp
+│   ├── test_orders.cpp
+│   └── test_delivery_estimator.cpp
+│
+└── docs/
+    ├── database_design.md
+    ├── api_endpoints.md
+    └── development_notes.md
+
+
+7. Database Design
+------------------
+
+Recommended PostgreSQL tables:
+
+7.1 users
+---------
+- id
+- username
+- email
+- password_hash
+- role
+- created_at
+
+7.2 stores
+----------
+- id
+- name
+- description
+- address
+- phone
+- is_open
+- created_at
+
+7.3 menu_items
+--------------
+- id
+- store_id
+- name
+- description
+- price
+- estimated_preparation_minutes
+- is_available
+
+7.4 addresses
+-------------
+- id
+- user_id
+- street
+- city
+- postal_code
+- latitude
+- longitude
+
+7.5 orders
+----------
+- id
+- user_id
+- store_id
+- address_id
+- status
+- total_price
+- estimated_preparation_minutes
+- estimated_delivery_minutes
+- estimated_total_minutes
+- created_at
+
+7.6 order_items
+---------------
+- id
+- order_id
+- menu_item_id
+- quantity
+- unit_price
+- subtotal
+
+7.7 chat_messages
+-----------------
+- id
+- order_id
+- sender_user_id
+- message
+- sent_at
+- is_read
+
+
+8. Order Status Flow
+--------------------
+
+Possible order statuses:
+- pending
+- accepted
+- preparing
+- ready_for_pickup
+- out_for_delivery
+- delivered
+- cancelled
+
+Typical flow:
+pending -> accepted -> preparing -> ready_for_pickup -> out_for_delivery -> delivered
+
+Real-time WebSocket updates should be sent whenever an order status changes.
+
+
+9. Delivery Time Estimation
+---------------------------
+
+The estimated total time can start simple and become more advanced later.
+
+Initial formula:
+estimated_total_time =
+    max(preparation time of all items) + delivery travel time + extra buffer
+
+Example:
+- Margherita Pizza preparation: 15 minutes
+- Burger preparation: 12 minutes
+- Delivery travel time: 20 minutes
+- Buffer: 5 minutes
+
+Estimated total:
+max(15, 12) + 20 + 5 = 40 minutes
+
+Possible future improvements:
+- Use store workload
+- Use number of active orders
+- Use distance from store to user
+- Use traffic data from an external API
+- Use average historical preparation times
+
+
+10. API Design
+--------------
+
+10.1 Auth API
+-------------
+POST /api/register
+Request:
+{
+  "username": "john",
+  "email": "john@example.com",
+  "password": "secret"
+}
+
+POST /api/login
+Request:
+{
+  "email": "john@example.com",
+  "password": "secret"
+}
+
+10.2 Store API
+--------------
+GET /api/stores
+Returns all available stores.
+
+GET /api/stores/{storeId}
+Returns details for one store.
+
+10.3 Menu API
+-------------
+GET /api/stores/{storeId}/menu
+Returns menu items for a store.
+
+10.4 Order API
+--------------
+POST /api/orders
+Creates a new order.
+
+GET /api/orders/{orderId}
+Returns order details.
+
+PATCH /api/orders/{orderId}/status
+Updates order status.
+
+10.5 Chat API
+-------------
+GET /api/orders/{orderId}/messages
+Returns previous chat messages for an order.
+
+
+11. WebSocket Design
+--------------------
+
+WebSocket endpoint:
+ws://localhost:9001/ws
+
+Message types:
+- chat_message
+- order_status_update
+- user_joined_chat
+- user_left_chat
+- notification
+
+Example chat message:
+{
+  "type": "chat_message",
+  "orderId": 15,
+  "senderId": 3,
+  "message": "Hello, is my order almost ready?"
+}
+
+Example order status update:
+{
+  "type": "order_status_update",
+  "orderId": 15,
+  "status": "preparing",
+  "estimatedTotalMinutes": 35
+}
+
+
+12. Security Requirements
+-------------------------
+
+Minimum security requirements:
+- Store password hashes, not plain passwords
+- Use prepared statements
+- Validate all user input
+- Use HTTPS in production
+- Use secure authentication tokens
+- Do not expose database credentials in source code
+- Use environment variables or configuration files ignored by Git
+- Add rate limiting later
+- Add role checks for admin/store actions
+
+
+13. Suggested Development Roadmap
+---------------------------------
+
+Phase 1: Console Prototype
+- Create models
+- Create database schema
+- Connect C++ to PostgreSQL
+- Implement repositories
+- Register/login users
+- List stores and menu items
+- Place orders
+
+Phase 2: HTTP Backend
+- Add uWebSockets HTTP server
+- Add REST endpoints
+- Return JSON responses
+- Connect frontend with Fetch API
+
+Phase 3: Frontend UI
+- Build basic HTML/CSS pages
+- Register/login UI
+- Store list page
+- Menu page
+- Cart page
+- Order status page
+
+Phase 4: Real-Time Features
+- Add WebSocket server
+- Implement order status updates
+- Implement live chat
+
+Phase 5: Delivery Estimation
+- Add preparation time logic
+- Add address support
+- Add simple distance/time calculation
+- Improve with historical or external data later
+
+Phase 6: Testing and Cleanup
+- Add unit tests
+- Add error handling
+- Add logging
+- Improve folder structure
+- Write README and API documentation
+
+
+14. Recommended First Implementation Order
+------------------------------------------
+
+To keep the project manageable, the source files should be built in this order:
+
+1. models/User.h
+2. models/Store.h
+3. models/MenuItem.h
+4. models/Order.h
+5. config/AppConfig.h / AppConfig.cpp
+6. database/Database.h / Database.cpp
+7. repositories/UserRepository.h / UserRepository.cpp
+8. services/AuthService.h / AuthService.cpp
+9. repositories/StoreRepository.h / StoreRepository.cpp
+10. repositories/MenuRepository.h / MenuRepository.cpp
+11. services/StoreService.h / StoreService.cpp
+12. services/MenuService.h / MenuService.cpp
+13. repositories/OrderRepository.h / OrderRepository.cpp
+14. services/OrderService.h / OrderService.cpp
+15. services/DeliveryEstimator.h / DeliveryEstimator.cpp
+16. api/HttpServer.h / HttpServer.cpp
+17. api/AuthController.h / AuthController.cpp
+18. api/StoreController.h / StoreController.cpp
+19. api/MenuController.h / MenuController.cpp
+20. api/OrderController.h / OrderController.cpp
+21. realtime/ConnectionManager.h / ConnectionManager.cpp
+22. realtime/WebSocketServer.h / WebSocketServer.cpp
+23. realtime/ChatChannel.h / ChatChannel.cpp
+24. realtime/OrderStatusChannel.h / OrderStatusChannel.cpp
+25. frontend files
+
+
+15. Final Notes
+---------------
+
+The project idea is valuable, but it is ambitious. The best approach is to avoid building
+everything at once.
+
+Recommended immediate next step:
+- Do not start with uWebSockets, WebSockets, Boost, and frontend all at the same time.
+- Start with the database schema, models, repositories, and console-based services.
+- After the core business logic works, add HTTP endpoints.
+- After HTTP endpoints work, add WebSockets.
+- After the backend works, improve the frontend.
+
+This approach avoids confusion and makes the system easier to test.
